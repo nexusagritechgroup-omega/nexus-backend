@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "functions": {
+    "api/chat.js":             { "maxDuration": 30 },
+    "api/farmScore.js":        { "maxDuration": 60 },
+    "api/create-payment.js":   { "maxDuration": 15 },
+    "api/webhook-midtrans.js": { "maxDuration": 10 },
+    "api/health.js":           { "maxDuration": 10 }
+  },
+  "crons": [
+    { "path": "/api/farmScore", "schedule": "0 18 * * *" },
+    { "path": "/api/health",    "schedule": "*/5 * * * *" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "DENY" },
+        { "key": "X-XSS-Protection",         "value": "1; mode=block" },
+        { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",       "value": "camera=(self), microphone=(self), geolocation=(self)" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/admin",       "destination": "/admin/index.html" },
+    { "source": "/admin/(.*)", "destination": "/admin/index.html" },
+    { "source": "/((?!api/|admin).*)", "destination": "/index.html" }
+  ]
+}
