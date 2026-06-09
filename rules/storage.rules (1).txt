@@ -1,0 +1,62 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < 5 * 1024 * 1024; // maks 5MB
+    }
+    function isValidDoc() {
+      return request.resource.size < 10 * 1024 * 1024; // maks 10MB
+    }
+
+    // Foto hewan — hanya owner yang upload/baca
+    match /animals/{userId}/{animalId}/{fileName} {
+      allow read: if isAuth() && isOwner(userId);
+      allow write: if isAuth() && isOwner(userId) && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    // Foto daily log
+    match /dailyLogs/{userId}/{logId}/{fileName} {
+      allow read: if isAuth() && isOwner(userId);
+      allow write: if isAuth() && isOwner(userId) && isValidImage();
+      allow delete: if false; // log tidak dihapus
+    }
+
+    // Foto health check
+    match /healthChecks/{userId}/{checkId}/{fileName} {
+      allow read: if isAuth() && isOwner(userId);
+      allow write: if isAuth() && isOwner(userId) && isValidImage();
+      allow delete: if false;
+    }
+
+    // Foto Organic Credit — bisa dilihat admin untuk verifikasi
+    match /organicCredits/{userId}/{creditId}/{fileName} {
+      allow read: if isAuth() && (isOwner(userId) || isAdmin());
+      allow write: if isAuth() && isOwner(userId) && isValidImage();
+      allow delete: if false;
+    }
+
+    // Foto marketplace listing — publik untuk user login
+    match /marketplace/{listingId}/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAuth() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    // DENY everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
